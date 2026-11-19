@@ -12,6 +12,9 @@ const base: VestedData = {
   regime: null,
   concentration: null,
   usHoldings: [],
+  indiaHoldings: [],
+  funds: [],
+  otherAssets: [],
   edge: null,
 }
 

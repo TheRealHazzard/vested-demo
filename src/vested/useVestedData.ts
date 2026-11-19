@@ -52,7 +52,32 @@ export interface UsHolding {
   ticker: string
   value_inr: number
   day_change_pct: number | null
+  pnl_pct?: number
   verdict: 'REVIEW' | 'WATCH' | 'HOLD'
+  reasons?: string[]
+}
+
+export interface IndiaHolding {
+  symbol: string
+  value: number
+  weight_pct: number
+  verdict: 'TRIM' | 'REVIEW' | 'WATCH' | 'HOLD'
+  reasons: string[]
+  momentum_6mo: number | null
+}
+
+export interface MutualFund {
+  scheme_name: string
+  value: number
+  scheme_category: string | null
+}
+
+export interface OtherAsset {
+  name: string
+  category: string
+  value: number
+  liquid: number
+  note: string
 }
 
 export interface EdgeSummary {
@@ -69,9 +94,11 @@ export interface VestedData {
   regime: Regime | null
   concentration: Concentration | null
   usHoldings: UsHolding[]
+  indiaHoldings: IndiaHolding[]
+  funds: MutualFund[]
+  otherAssets: OtherAsset[]
   edge: EdgeSummary | null
 }
-
 
 /** Deterministic sample series so the demo looks the same on every visit. */
 function series(): Snapshot[] {
@@ -139,10 +166,24 @@ const SAMPLE: VestedData = {
   regime: { pct_above_sma: 5.8, uptrend: true },
   concentration: { holdings: [{ symbol: 'Reliance', weight_pct: 14 }, { symbol: 'HDFC Bank', weight_pct: 18 }], top2_pct: 32 },
   usHoldings: [
-    { ticker: 'NVDA', value_inr: 900_000, day_change_pct: 2.4, verdict: 'HOLD' },
+    { ticker: 'NVDA', value_inr: 900_000, day_change_pct: 2.4, verdict: 'HOLD', reasons: ['Up a lot this year. Nothing to do.'] },
     { ticker: 'MSFT', value_inr: 700_000, day_change_pct: -1.1, verdict: 'HOLD' },
     { ticker: 'VOO', value_inr: 600_000, day_change_pct: 0.6, verdict: 'HOLD' },
     { ticker: 'TSLA', value_inr: 300_000, day_change_pct: -2.9, verdict: 'REVIEW' },
+  ],
+  indiaHoldings: [
+    { symbol: 'Reliance Industries', value: 1_720_000, weight_pct: 14, verdict: 'TRIM', reasons: ['It is 14% of your liquid money and your limit is 10%.', 'Momentum is positive, so this is about size, not about the company.'], momentum_6mo: 0.061 },
+    { symbol: 'HDFC Bank', value: 1_180_000, weight_pct: 10, verdict: 'HOLD', reasons: [], momentum_6mo: 0.097 },
+    { symbol: 'Infosys', value: 890_000, weight_pct: 7, verdict: 'HOLD', reasons: [], momentum_6mo: 0.032 },
+    { symbol: 'IRCTC', value: 340_000, weight_pct: 3, verdict: 'WATCH', reasons: ['Three negative headlines since Monday, including an index removal.', 'It is a small position, so there is no urgency.'], momentum_6mo: -0.04 },
+  ],
+  funds: [
+    { scheme_name: 'Parag Parikh Flexi Cap Fund - Direct Plan - Growth', value: 1_460_000, scheme_category: 'Flexi cap' },
+    { scheme_name: 'UTI Nifty 50 Index Fund - Direct Plan - Growth', value: 910_000, scheme_category: 'Index' },
+  ],
+  otherAssets: [
+    { name: 'Sovereign Gold Bond', category: 'Gold', value: 1_090_000, liquid: 1, note: 'Gold is 6 points under its 15% target. This month’s Rs 24,000 goes here.' },
+    { name: 'EPF', category: 'Retirement', value: 3_100_000, liquid: 0, note: '' },
   ],
   edge: { verdict: 'No edge found. Do not trade it.' },
 }

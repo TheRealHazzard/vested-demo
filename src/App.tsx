@@ -4,6 +4,7 @@ import { buildNeeds } from './vested/derive'
 import { MobileShell } from './vested/mobile/MobileShell'
 import type { MobileNav } from './vested/mobile/MobileToday'
 import type { Place } from './vested/mobile/TabBar'
+import Portfolio from './vested/Portfolio'
 import Today from './vested/Today'
 import { useIsMobile } from './vested/useIsMobile'
 import { useVestedData } from './vested/useVestedData'
@@ -19,7 +20,7 @@ const PLACES: Place[] = [
 
 const RAIL: { label: string; icon: ReactNode; built: boolean }[] = [
   { label: 'Today', icon: <Home size={22} strokeWidth={1.6} />, built: true },
-  { label: 'Portfolio', icon: <PieChart size={22} strokeWidth={1.6} />, built: false },
+  { label: 'Portfolio', icon: <PieChart size={22} strokeWidth={1.6} />, built: true },
   { label: 'Signals', icon: <Activity size={22} strokeWidth={1.6} />, built: false },
   { label: 'Plan', icon: <TrendingUp size={22} strokeWidth={1.6} />, built: false },
 ]
@@ -31,11 +32,18 @@ export function App() {
   const isMobile = useIsMobile()
   const data = useVestedData()
   const [note, setNote] = useState<string | null>(null)
+  const [place, setPlace] = useState<'today' | 'portfolio'>('today')
 
   const nav: MobileNav = useMemo(
     () => ({
       places: PLACES,
-      onNavigate: (href) => setNote(href === '#today' ? null : NOT_YET),
+      onNavigate: (href) => {
+        if (href === '#today' || href === '#portfolio') {
+          setNote(null)
+          setPlace(href === '#today' ? 'today' : 'portfolio')
+          window.scrollTo(0, 0)
+        } else setNote(NOT_YET)
+      },
       settings: [
         { label: 'Trading console', detail: 'Orders, positions and the classic dashboard', href: '#console' },
         { label: 'System health', detail: 'Whether the daily checks are passing', href: '#health' },
@@ -65,13 +73,13 @@ export function App() {
     const urgent = buildNeeds(data).filter((n) => n.hot).length
     return (
       <MobileShell
-        active="today"
+        active={place}
         places={PLACES}
         badge={urgent > 0 ? { place: 'today', count: urgent } : undefined}
         onNavigate={nav.onNavigate}
       >
         {banner}
-        <Today data={data} nav={nav} />
+        {place === 'today' ? <Today data={data} nav={nav} /> : <Portfolio data={data} nav={nav} />}
       </MobileShell>
     )
   }
@@ -87,8 +95,8 @@ export function App() {
             key={p.label}
             type="button"
             className="v-navbtn"
-            aria-current={p.built ? 'page' : undefined}
-            onClick={() => setNote(p.built ? null : NOT_YET)}
+            aria-current={p.label.toLowerCase() === place ? 'page' : undefined}
+            onClick={() => nav.onNavigate(p.built ? `#${p.label.toLowerCase()}` : '#soon')}
           >
             {p.icon}
             {p.label}
@@ -103,7 +111,7 @@ export function App() {
       </nav>
       <main className="v-main">
         {banner}
-        <Today data={data} nav={nav} />
+        {place === 'today' ? <Today data={data} nav={nav} /> : <Portfolio data={data} nav={nav} />}
       </main>
     </div>
   )

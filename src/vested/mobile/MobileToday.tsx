@@ -16,9 +16,8 @@ import {
   PlusCircle,
   RefreshCw,
   Scale,
-  Settings,
 } from 'lucide-react'
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useCallback, useMemo, useState } from 'react'
 import {
   ASSUMED_RETURN,
   buildNeeds,
@@ -30,6 +29,7 @@ import {
 } from '../derive'
 import { countWord, inr, inrParts, longDate, shortDate, signedPct } from '../format'
 import type { VestedData } from '../useVestedData'
+import { PageTop } from './PageTop'
 import { ScrubChart } from './ScrubChart'
 import { Sheet } from './Sheet'
 import type { Place } from './TabBar'
@@ -111,7 +111,6 @@ export function MobileToday({ data, nav }: { data: VestedData; nav: MobileNav })
   const needs = allNeeds.filter((n) => !snoozed.includes(n.id))
   const [showAll, setShowAll] = useState(false)
   const [open, setOpen] = useState<Need | null>(null)
-  const [openSettings, setOpenSettings] = useState(false)
   const snooze = useCallback(
     (id: string) => {
       const next = [...snoozed, id]
@@ -176,15 +175,6 @@ export function MobileToday({ data, nav }: { data: VestedData; nav: MobileNav })
         ? `Net worth ${inr(netWorth)}, ${plot.gain >= 0 ? 'up' : 'down'} ${inr(Math.abs(plot.gain))} since ${plot.from}.`
         : `Net worth ${inr(netWorth)}.`
 
-  // ----- the top bar condenses once the big title has scrolled away -----
-  const [condensed, setCondensed] = useState(false)
-  useEffect(() => {
-    const onScroll = () => setCondensed(window.scrollY > 150)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
   // ----- lead-in sentence -----
   const lead =
     deltaPct === null || Math.abs(deltaPct) < 1
@@ -209,32 +199,21 @@ export function MobileToday({ data, nav }: { data: VestedData; nav: MobileNav })
 
   return (
     <div className="vm-page">
-      <header className={`vm-bar${condensed ? ' is-condensed' : ''}`}>
-        <div className="vm-bar-mid" aria-hidden={!condensed}>
-          <span className="vm-bar-title">
-            Rs {inrParts(netWorth).num} {inrParts(netWorth).unit}
-          </span>
-          {delta !== null ? (
+      <PageTop
+        eyebrow={`${weekday}, ${day}`}
+        barTitle={`Rs ${inrParts(netWorth).num} ${inrParts(netWorth).unit}`}
+        barSub={
+          delta !== null ? (
             <span className={`vm-bar-sub ${delta >= 0 ? 'vm-up' : 'vm-down'}`}>
               {delta >= 0 ? '+' : '−'}
               {inr(Math.abs(delta))}
             </span>
-          ) : null}
-        </div>
-        <button
-          type="button"
-          className="vm-circle vm-bar-btn"
-          aria-label="Settings and more"
-          onClick={() => setOpenSettings(true)}
-        >
-          <Settings size={20} strokeWidth={1.8} />
-        </button>
-      </header>
+          ) : null
+        }
+        nav={nav}
+      />
 
       <div className="vm-pad">
-        <p className="vm-cap">
-          {weekday}, {day}
-        </p>
         <h1 className="vm-title">
           {!data.loaded ? (
             'Reading your numbers.'
@@ -522,26 +501,6 @@ export function MobileToday({ data, nav }: { data: VestedData; nav: MobileNav })
             </div>
           </>
         ) : null}
-      </Sheet>
-
-      <Sheet open={openSettings} onClose={() => setOpenSettings(false)} title="More">
-        <div className="vm-group">
-          {nav.settings.map((s) => (
-            <Row
-              key={s.label}
-              onClick={() => {
-                setOpenSettings(false)
-                nav.onNavigate(s.href)
-              }}
-            >
-              <span className="vm-rowtext">
-                <span className="vm-rowtitle">{s.label}</span>
-                <span className="vm-sub">{s.detail}</span>
-              </span>
-              <ChevronRight size={18} className="vm-chev" aria-hidden="true" />
-            </Row>
-          ))}
-        </div>
       </Sheet>
     </div>
   )
