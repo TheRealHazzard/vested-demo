@@ -1,22 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { buildHoldings, lensCounts, shortFundName } from './holdings'
-import type { VestedData } from './useVestedData'
+import { emptyData } from './testData'
 
-const base: VestedData = {
-  loaded: true,
-  snapshots: [],
-  fire: null,
-  allocation: null,
-  indmoney: null,
-  healthProblems: [],
-  regime: null,
-  concentration: null,
-  usHoldings: [],
-  indiaHoldings: [],
-  funds: [],
-  otherAssets: [],
-  edge: null,
-}
+const base = emptyData
 
 describe('buildHoldings', () => {
   it('merges every source, biggest first, with shares that add to 100', () => {

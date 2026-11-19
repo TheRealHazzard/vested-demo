@@ -4,7 +4,7 @@
  * projected path to the goal. No React in here, so it can be tested alone.
  */
 import { inr, shortDate, shortDateYear } from './format'
-import type { VestedData } from './useVestedData'
+import type { BenchmarkPoint, VestedData } from './useVestedData'
 
 // ---------- needs you ----------
 
@@ -162,12 +162,28 @@ export interface ScrubPoint {
   y: number
   value: number
   label: string
+  /** Set on the few points that mark something worth knowing about. */
+  note?: string
+}
+
+/** A mark on the line: the biggest day up or down in the range. */
+export interface ChartEvent {
+  x: number
+  y: number
+  tone: 'up' | 'down'
+  label: string
+  note: string
 }
 
 export interface Plot {
   scrub: ScrubPoint[]
+  events: ChartEvent[]
   line: string
   area: string
+  /** The same money in the Nifty, if asked for. */
+  bench: string | null
+  benchGain: number | null
+  benchValue: number | null
   end: { x: number; y: number } | null
   from: string
   to: string
@@ -177,8 +193,12 @@ export interface Plot {
 
 const EMPTY_PLOT: Plot = {
   scrub: [],
+  events: [],
   line: '',
   area: '',
+  bench: null,
+  benchGain: null,
+  benchValue: null,
   end: null,
   from: '',
   to: '',
@@ -197,10 +217,54 @@ function toPath(points: { x: number; y: number }[]): string {
   return points.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')
 }
 
+/** The benchmark's value on or before a date (or its first value, for dates before it starts). */
+function benchAt(series: BenchmarkPoint[], time: number): number | null {
+  if (!series.length) return null
+  let value = series[0].value
+  for (const p of series) {
+    if (new Date(p.date).getTime() > time) break
+    value = p.value
+  }
+  return value
+}
+
+/** The biggest single-day rise and fall, when each is large enough to be worth a mark. */
+function findEvents(
+  pts: VestedData['snapshots'],
+  xy: { x: number; y: number }[],
+  fmt: (iso: string) => string
+): ChartEvent[] {
+  let up = { i: -1, pct: 0 }
+  let down = { i: -1, pct: 0 }
+  for (let i = 1; i < pts.length; i++) {
+    const prev = pts[i - 1].total_value
+    if (!prev) continue
+    const pct = ((pts[i].total_value - prev) / prev) * 100
+    if (pct > up.pct) up = { i, pct }
+    if (pct < down.pct) down = { i, pct }
+  }
+  const out: ChartEvent[] = []
+  const add = (hit: { i: number; pct: number }, tone: 'up' | 'down') => {
+    if (hit.i < 0 || Math.abs(hit.pct) < 1) return
+    const change = pts[hit.i].total_value - pts[hit.i - 1].total_value
+    out.push({
+      x: xy[hit.i].x,
+      y: xy[hit.i].y,
+      tone,
+      label: fmt(pts[hit.i].date),
+      note: `Biggest one-day ${tone === 'up' ? 'rise' : 'fall'} here: ${hit.pct > 0 ? '+' : '−'}${Math.abs(hit.pct).toFixed(1)}% (${change > 0 ? '+' : '−'}${inr(Math.abs(change))})`,
+    })
+  }
+  add(up, 'up')
+  add(down, 'down')
+  return out
+}
+
 /** Net worth over a range, filling the full width. Fewer than two points means there is nothing honest to draw. */
 export function plotRange(
   snapshots: VestedData['snapshots'],
-  key: Exclude<RangeKey, 'Path'>
+  key: Exclude<RangeKey, 'Path'>,
+  bench?: BenchmarkPoint[]
 ): Plot {
   const latest = snapshots.at(-1)
   if (!latest) return EMPTY_PLOT
@@ -212,24 +276,41 @@ export function plotRange(
   const t0 = new Date(pts[0].date).getTime()
   const t1 = new Date(pts[pts.length - 1].date).getTime()
   const vals = pts.map((p) => p.total_value)
-  const lo = Math.min(...vals)
-  const hi = Math.max(...vals)
+
+  // The same starting money, had it been in the Nifty instead.
+  const startBench = bench ? benchAt(bench, t0) : null
+  const benchVals =
+    bench && startBench
+      ? pts.map(
+          (p) => ((benchAt(bench, new Date(p.date).getTime()) ?? startBench) / startBench) * vals[0]
+        )
+      : null
+
+  const all = benchVals ? [...vals, ...benchVals] : vals
+  const lo = Math.min(...all)
+  const hi = Math.max(...all)
   const span = hi - lo || 1
-  const xy = pts.map((p) => ({
-    x: t1 === t0 ? 0 : ((new Date(p.date).getTime() - t0) / (t1 - t0)) * BOX.w,
-    y: BOX.bottom - ((p.total_value - lo) / span) * (BOX.bottom - BOX.top - 16) - 8,
-  }))
+  const yOf = (v: number) => BOX.bottom - ((v - lo) / span) * (BOX.bottom - BOX.top - 16) - 8
+  const xOf = (iso: string) =>
+    t1 === t0 ? 0 : ((new Date(iso).getTime() - t0) / (t1 - t0)) * BOX.w
+  const xy = pts.map((p) => ({ x: xOf(p.date), y: yOf(p.total_value) }))
   const line = toPath(xy)
   const end = xy[xy.length - 1]
+  const events = findEvents(pts, xy, fmt)
   return {
     scrub: pts.map((p, i) => ({
       x: xy[i].x,
       y: xy[i].y,
       value: p.total_value,
       label: fmt(p.date),
+      note: events.find((e) => e.x === xy[i].x && e.y === xy[i].y)?.note,
     })),
+    events,
     line,
     area: `${line} L${end.x.toFixed(1)} ${BOX.bottom} L0 ${BOX.bottom} Z`,
+    bench: benchVals ? toPath(pts.map((p, i) => ({ x: xOf(p.date), y: yOf(benchVals[i]) }))) : null,
+    benchValue: benchVals ? benchVals[benchVals.length - 1] : null,
+    benchGain: benchVals ? benchVals[benchVals.length - 1] - vals[0] : null,
     end,
     from: fmt(pts[0].date),
     to: 'Today',
@@ -244,15 +325,39 @@ export const ASSUMED_RETURN = 7
 export const HORIZON_MONTHS = 180
 
 /** Month-by-month value, saving a fixed amount each month and compounding monthly. */
-export function simulate(start: number, monthly: number, annualPct: number): number[] {
+export function simulate(
+  start: number,
+  monthly: number,
+  annualPct: number,
+  /** An optional one-off fall (a fraction, 0.35 for 35%) at a given month. */
+  shock?: { month: number; fall: number }
+): number[] {
   const m = (1 + annualPct / 100) ** (1 / 12) - 1
   const out = [start]
   let w = start
   for (let t = 1; t <= HORIZON_MONTHS; t++) {
     w = w * (1 + m) + monthly
+    if (shock && t === shock.month) w *= 1 - shock.fall
     out.push(w)
   }
   return out
+}
+
+/**
+ * The monthly saving that lands exactly on the goal after `months`, at a steady yearly return.
+ * The closed form of the same compounding `simulate` uses, so dragging the goal date and reading
+ * back the saving always agrees with the drawn line.
+ */
+export function requiredMonthly(
+  start: number,
+  goal: number,
+  months: number,
+  annualPct: number
+): number {
+  const m = (1 + annualPct / 100) ** (1 / 12) - 1
+  const g = (1 + m) ** months
+  if (m === 0) return Math.max((goal - start) / months, 0)
+  return Math.max(((goal - start * g) * m) / (g - 1), 0)
 }
 
 export function monthsToGoal(series: number[], goal: number): number | null {
@@ -287,18 +392,20 @@ export interface PathPlot {
   toLabel: string
 }
 
-const TODAY_X = 200
+export const TODAY_X = 200
 
 /** History squeezed into the left quarter, then the projection fanning out to the goal. */
 export function plotPath(
   snapshots: VestedData['snapshots'],
   start: number,
   goal: number,
-  monthly: number
+  monthly: number,
+  returnPct: number = ASSUMED_RETURN,
+  shock?: { month: number; fall: number }
 ): PathPlot {
-  const base = simulate(start, monthly, ASSUMED_RETURN)
-  const hi = simulate(start, monthly, ASSUMED_RETURN + 3)
-  const lo = simulate(start, monthly, ASSUMED_RETURN - 3)
+  const base = simulate(start, monthly, returnPct, shock)
+  const hi = simulate(start, monthly, returnPct + 3, shock)
+  const lo = simulate(start, monthly, Math.max(returnPct - 3, 1), shock)
   const vals = snapshots.map((s) => s.total_value)
   const lowest = Math.min(start, ...(vals.length ? vals : [start]))
   const top = Math.max(goal * 1.08, start)

@@ -28,6 +28,7 @@
   --ash: #5a554d;
   --ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, system-ui, sans-serif;
 
+  font-variant-numeric: tabular-nums lining-nums;
   font-size: 17px;
   font: -apple-system-body;
   font-family: var(--ui);
@@ -293,6 +294,9 @@
 }
 .vm-dot--now {
   background: var(--ember);
+  box-shadow:
+    0 0 0 5px rgba(255, 122, 26, 0.16),
+    0 0 18px rgba(255, 122, 26, 0.55);
 }
 .vm-dot--goal {
   background: #000;
@@ -623,7 +627,7 @@
   border-bottom: 0;
   border-radius: 22px 22px 0 0;
   transform: translateY(100%);
-  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.42s cubic-bezier(0.22, 1.12, 0.36, 1);
   outline: 0;
 }
 .vm-sheet.is-open {
@@ -823,4 +827,378 @@
   margin: 4px 0 0;
   font-size: 1.18em;
   font-weight: 600;
+}
+
+/* ---------- motion ---------- */
+@keyframes vm-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes vm-reveal {
+  from {
+    clip-path: inset(-20px 100% -20px -20px);
+  }
+  to {
+    clip-path: inset(-20px -20px -20px -20px);
+  }
+}
+@keyframes vm-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+@keyframes vm-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes vm-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.vm-page {
+  animation: vm-in 0.38s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.vm-chart svg {
+  animation: vm-reveal 0.95s cubic-bezier(0.25, 0.7, 0.2, 1) both;
+}
+@keyframes vm-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.vm-marks > * {
+  animation: vm-fade 0.4s 0.7s both;
+}
+.vm-marks > .vm-dot,
+.vm-marks > .vm-evt {
+  animation: vm-pop 0.4s 0.8s both;
+}
+.vm-row--tap {
+  transition:
+    transform 0.12s,
+    background 0.12s;
+}
+.vm-row--tap:active {
+  transform: scale(0.985);
+}
+.vm-group > .vm-swipe .vm-tile {
+  animation: vm-in 0.45s both;
+  animation-delay: calc(var(--i, 0) * 70ms + 150ms);
+}
+.vm-seg button {
+  transition:
+    background 0.18s,
+    color 0.18s;
+}
+
+/* ---------- loading ---------- */
+.vm-skel {
+  display: flex;
+  flex-direction: column;
+}
+.vm-skel-line {
+  display: block;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #0d0d0d 30%, #1a1a1a 50%, #0d0d0d 70%);
+  background-size: 200% 100%;
+  animation: vm-shimmer 1.6s linear infinite;
+}
+
+/* ---------- the chart, further ---------- */
+.vm-marks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.vm-marks > .vm-knob {
+  pointer-events: auto;
+}
+.vm-bench {
+  fill: none;
+  stroke: var(--ink3);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 5;
+  vector-effect: non-scaling-stroke;
+}
+.vm-evt {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: #000;
+  border: 2px solid var(--ink3);
+}
+.vm-evt--up {
+  border-color: var(--up);
+}
+.vm-evt--down {
+  border-color: var(--down);
+}
+.vm-knob {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+  touch-action: none;
+  cursor: grab;
+  border-radius: 50%;
+}
+.vm-knob-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #000;
+  border: 3px solid var(--ember);
+  box-shadow: 0 0 0 5px rgba(255, 122, 26, 0.16);
+}
+.vm-chartnote {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.vm-chartnote .vm-caption {
+  margin-bottom: 0;
+}
+.vm-chipbtn {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line2);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink2);
+  font-size: 0.88em;
+  font-weight: 600;
+}
+.vm-chipbtn[aria-pressed='true'] {
+  background: var(--line2);
+  color: var(--ink);
+  border-color: var(--line2);
+}
+.vm-story {
+  margin-top: 8px;
+  font-size: 0.9em;
+  line-height: 1.4;
+  color: var(--ink2);
+}
+
+/* ---------- swipe ---------- */
+.vm-swipe {
+  position: relative;
+  overflow: hidden;
+}
+.vm-swipe + .vm-swipe {
+  border-top: 1px solid var(--hair);
+}
+.vm-swipe-action {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 92px;
+  border: 0;
+  background: var(--ember);
+  color: #000;
+  font-weight: 700;
+}
+.vm-swipe-body {
+  position: relative;
+  background: var(--surface);
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  touch-action: pan-y;
+}
+.vm-swipe-body.is-dragging {
+  transition: none;
+}
+.vm-swipe .vm-row + .vm-row {
+  border-top: 0;
+}
+
+/* ---------- all clear ---------- */
+.vm-clear {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 26px 20px 20px;
+  text-align: center;
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.vm-clear-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.7em;
+  font-weight: 500;
+}
+.vm-clear-ring {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: vm-draw 0.9s 0.1s cubic-bezier(0.3, 0.7, 0.2, 1) forwards;
+}
+.vm-clear-tick {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: vm-draw 0.5s 0.7s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vm-chart svg,
+  .vm-marks > *,
+  .vm-page,
+  .vm-group > .vm-swipe .vm-tile {
+    animation: none !important;
+  }
+  .vm-clear-ring,
+  .vm-clear-tick {
+    animation: none !important;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ---------- signals and plan (phone) ---------- */
+.vm-rank {
+  flex: none;
+  width: 22px;
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 0.8em;
+  color: var(--ink3);
+}
+.vm-left {
+  align-self: flex-start;
+  padding-left: 0;
+}
+.vm-form {
+  padding: 4px 0;
+}
+.vm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+}
+.vm-field + .vm-field,
+.vm-field + .vm-switchrow,
+.vm-field + .vm-verdict {
+  border-top: 1px solid var(--hair);
+}
+.vm-field-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.vm-range {
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  accent-color: var(--ember);
+  background: transparent;
+}
+.vm-amount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: #161616;
+}
+.vm-amount input {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+}
+.vm-verdict {
+  margin: 0 14px 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border-left: 3px solid var(--up);
+  background: #0f1f15;
+}
+.vm-verdict.is-no {
+  border-left-color: var(--ember);
+  background: var(--ember-bg);
+}
+.vm-switchrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 0;
+  border-top: 1px solid var(--hair);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+.vm-switch {
+  position: relative;
+  flex: none;
+  width: 51px;
+  height: 31px;
+  border-radius: 999px;
+  background: #2a2a2a;
+  transition: background 0.2s;
+}
+.vm-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #ece4d6;
+  transition: transform 0.2s;
+}
+.vm-switchrow[aria-checked='true'] .vm-switch {
+  background: var(--ember);
+}
+.vm-switchrow[aria-checked='true'] .vm-switch::after {
+  transform: translateX(20px);
+}
+
+/* the chart and the forms also appear on the wide Plan page, which has its own tokens */
+.vested {
+  --ink: var(--v-ink);
+  --ink2: var(--v-ink2);
+  --ink3: var(--v-mute);
+  --line2: var(--v-line2);
+  --hair: var(--v-hair);
+  --surface: var(--v-raise);
+  --ember: var(--v-ember);
+  --ember-ink: var(--v-ember-ink);
+  --ember-bg: var(--v-ember-bg);
+  --up: var(--v-up);
+  --down: var(--v-down);
 }

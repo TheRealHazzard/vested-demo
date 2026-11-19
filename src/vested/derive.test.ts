@@ -1,22 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { buildNeeds, monthsToGoal, plotRange, simulate } from './derive'
-import type { VestedData } from './useVestedData'
+import { emptyData } from './testData'
 
-const base: VestedData = {
-  loaded: true,
-  snapshots: [],
-  fire: null,
-  allocation: null,
-  indmoney: null,
-  healthProblems: [],
-  regime: null,
-  concentration: null,
-  usHoldings: [],
-  indiaHoldings: [],
-  funds: [],
-  otherAssets: [],
-  edge: null,
-}
+const base = emptyData
 
 describe('buildNeeds', () => {
   it('is empty when everything is fine', () => {

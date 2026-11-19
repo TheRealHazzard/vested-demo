@@ -7,7 +7,7 @@ from pathlib import Path
 SRC = Path('G:/Coding/openalgo/frontend/src/pages/vested')
 DST = Path(__file__).resolve().parent.parent / 'src' / 'vested'
 
-for name in ['derive.ts', 'derive.test.ts', 'format.ts', 'holdings.ts', 'holdings.test.ts', 'NetWorthChart.tsx', 'Today.tsx', 'DesktopPortfolio.tsx', 'Portfolio.tsx', 'vested.css', 'useIsMobile.ts']:
+for name in ['derive.ts', 'derive.test.ts', 'format.ts', 'holdings.ts', 'holdings.test.ts', 'insights.ts', 'insights.test.ts', 'planMath.ts', 'planMath.test.ts', 'signalsLogic.ts', 'signalsLogic.test.ts', 'testData.ts', 'usePlan.ts', 'useCountUp.ts', 'NetWorthChart.tsx', 'Today.tsx', 'DesktopPortfolio.tsx', 'Portfolio.tsx', 'DesktopPlan.tsx', 'Plan.tsx', 'DesktopSignals.tsx', 'Signals.tsx', 'vested.css', 'useIsMobile.ts']:
     shutil.copy(SRC / name, DST / name)
 for folder in ['mobile', 'fonts']:
     shutil.copytree(SRC / folder, DST / folder, dirs_exist_ok=True)

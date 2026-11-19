@@ -775,3 +775,68 @@
   font-size: 22px;
   font-weight: 300;
 }
+
+/* ---------- Plan and Signals (wide) ---------- */
+.vp-plan {
+  grid-template-columns: minmax(0, 1fr) 400px;
+}
+.vp-yearrow {
+  display: flex;
+  align-items: flex-end;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.vp-year {
+  margin: 0;
+  font-size: 128px;
+  font-weight: 200;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+.vp-chartwrap .vm-chart {
+  height: 320px;
+  margin: 18px 12px 0;
+}
+.vp-chartwrap {
+  font-size: 16px;
+}
+.vp-caption {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--v-ink2);
+}
+.vp-side {
+  font-size: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 36px;
+  border-left: 1px solid var(--v-hair);
+}
+.vp-plan .vm-section:first-of-type {
+  margin-top: 30px;
+}
+.vs-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1.2fr) minmax(0, 1fr) 90px;
+  align-items: center;
+  gap: 14px;
+  min-height: 58px;
+  border-top: 1px solid #141414;
+  font-size: 15px;
+}
+.vs-strategy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px 90px;
+  align-items: center;
+  gap: 24px;
+  min-height: 84px;
+  border-top: 1px solid #141414;
+}
+.vs-half {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 15px;
+}

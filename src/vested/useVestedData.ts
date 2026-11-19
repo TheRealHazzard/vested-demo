@@ -80,12 +80,75 @@ export interface OtherAsset {
   note: string
 }
 
+export interface BenchmarkPoint {
+  date: string
+  value: number
+}
+
+export interface Benchmark {
+  start_date: string
+  start_value: number
+  nifty: BenchmarkPoint[]
+  gold: BenchmarkPoint[]
+  fd: BenchmarkPoint[]
+}
+
+/** One name on the momentum leaderboard, 6-month return in percent. */
+export interface LeaderPick {
+  symbol: string
+  momentum: number | null
+}
+
+export interface AlgoBacktest {
+  sharpe: number
+  return_pct: number
+  max_dd_pct: number
+  baseline_sharpe: number
+  baseline_return_pct: number
+  baseline_max_dd_pct: number
+  folds: string
+  note: string
+}
+
+export interface AlgoComparison {
+  regime_uptrend: boolean
+  trailing_stop_pct: number
+  trailing_stop_backtest: AlgoBacktest | null
+}
+
+export interface Simulation {
+  id: string
+  name: string
+  description: string
+  started_date: string
+  starting_cash: number
+  current_value: number
+  return_pct: number
+}
+
+export interface EdgeRule {
+  events: number
+  net_mean: number | null
+  hit_rate: number | null
+  t_net: number | null
+  net_first_half: number | null
+  net_second_half: number | null
+}
+
 export interface EdgeSummary {
   verdict: string
+  rule: EdgeRule | null
+  minEvents: number | null
+  minT: number | null
+  posts: number | null
 }
 
 export interface VestedData {
   loaded: boolean
+  /** When these numbers were fetched (ms), so the page can say how fresh they are. */
+  asOf: number | null
+  /** True while the numbers on screen came from the last visit and a refresh is under way. */
+  refreshing: boolean
   snapshots: Snapshot[]
   fire: Fire | null
   allocation: TargetAllocation | null
@@ -97,6 +160,10 @@ export interface VestedData {
   indiaHoldings: IndiaHolding[]
   funds: MutualFund[]
   otherAssets: OtherAsset[]
+  benchmark: Benchmark | null
+  leaders: LeaderPick[]
+  algo: AlgoComparison | null
+  sims: Simulation[]
   edge: EdgeSummary | null
 }
 
@@ -125,10 +192,21 @@ function series(): Snapshot[] {
 }
 
 const snapshots = series()
+
+/** A quieter index to compare against, on the same dates. */
+function niftySeries() {
+  let v = 22_000
+  return snapshots.map((x, i) => ({
+    date: x.date,
+    value: Math.round((v *= 1 + Math.sin(i / 7) * 0.002 + 0.0003)),
+  }))
+}
 const latest = snapshots[snapshots.length - 1].total_value
 
 const SAMPLE: VestedData = {
   loaded: true,
+  asOf: Date.now(),
+  refreshing: false,
   snapshots,
   fire: {
     net_worth: latest + 2_600_000,
@@ -185,7 +263,68 @@ const SAMPLE: VestedData = {
     { name: 'Sovereign Gold Bond', category: 'Gold', value: 1_090_000, liquid: 1, note: 'Gold is 6 points under its 15% target. This month’s Rs 24,000 goes here.' },
     { name: 'EPF', category: 'Retirement', value: 3_100_000, liquid: 0, note: '' },
   ],
-  edge: { verdict: 'No edge found. Do not trade it.' },
+  benchmark: {
+    start_date: snapshots[0].date,
+    start_value: 22_000,
+    nifty: niftySeries(),
+    gold: [],
+    fd: [],
+  },
+  leaders: [
+    { symbol: 'BEL.NS', momentum: 38 },
+    { symbol: 'TRENT.NS', momentum: 31 },
+    { symbol: 'PERSISTENT.NS', momentum: 27 },
+    { symbol: 'RELIANCE.NS', momentum: 6.1 },
+    { symbol: 'SUNPHARMA.NS', momentum: 22 },
+  ],
+  algo: {
+    regime_uptrend: true,
+    trailing_stop_pct: 12,
+    trailing_stop_backtest: {
+      sharpe: 0.91,
+      return_pct: 14.2,
+      max_dd_pct: -17.5,
+      baseline_sharpe: 0.72,
+      baseline_return_pct: 9.1,
+      baseline_max_dd_pct: -24.8,
+      folds: '5 folds',
+      note: '',
+    },
+  },
+  sims: [
+    {
+      id: 'm5',
+      name: 'Momentum, top 5',
+      description: 'Monthly rebalance on paper money.',
+      started_date: '2026-01-02',
+      starting_cash: 1_000_000,
+      current_value: 1_042_000,
+      return_pct: 4.2,
+    },
+    {
+      id: 'dip',
+      name: 'Quality dip-buy',
+      description: '',
+      started_date: '2026-03-02',
+      starting_cash: 1_000_000,
+      current_value: 1_031_000,
+      return_pct: 3.1,
+    },
+  ],
+  edge: {
+    verdict: 'No edge found. Do not trade it.',
+    rule: {
+      events: 146,
+      net_mean: -0.0036,
+      hit_rate: 0.43,
+      t_net: -1.2,
+      net_first_half: -0.0021,
+      net_second_half: -0.0051,
+    },
+    minEvents: 100,
+    minT: 3,
+    posts: 18316,
+  },
 }
 
 /** The demo has no server: it always shows the same sample data. */

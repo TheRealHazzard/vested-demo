@@ -3,8 +3,10 @@ import { type ReactNode, useMemo, useState } from 'react'
 import { buildNeeds } from './vested/derive'
 import { MobileShell } from './vested/mobile/MobileShell'
 import type { MobileNav } from './vested/mobile/MobileToday'
-import type { Place } from './vested/mobile/TabBar'
+import type { Place, PlaceId } from './vested/mobile/TabBar'
+import Plan from './vested/Plan'
 import Portfolio from './vested/Portfolio'
+import Signals from './vested/Signals'
 import Today from './vested/Today'
 import { useIsMobile } from './vested/useIsMobile'
 import { useVestedData } from './vested/useVestedData'
@@ -21,26 +23,27 @@ const PLACES: Place[] = [
 const RAIL: { label: string; icon: ReactNode; built: boolean }[] = [
   { label: 'Today', icon: <Home size={22} strokeWidth={1.6} />, built: true },
   { label: 'Portfolio', icon: <PieChart size={22} strokeWidth={1.6} />, built: true },
-  { label: 'Signals', icon: <Activity size={22} strokeWidth={1.6} />, built: false },
-  { label: 'Plan', icon: <TrendingUp size={22} strokeWidth={1.6} />, built: false },
+  { label: 'Signals', icon: <Activity size={22} strokeWidth={1.6} />, built: true },
+  { label: 'Plan', icon: <TrendingUp size={22} strokeWidth={1.6} />, built: true },
 ]
 
-const NOT_YET = 'That part is designed and being built next. Today is what exists so far.'
+const NOT_YET = 'That part of the app is not in the demo.'
 
 /** The demo shell: the phone layout on small screens, the rail on wide ones. Only Today exists. */
 export function App() {
   const isMobile = useIsMobile()
   const data = useVestedData()
   const [note, setNote] = useState<string | null>(null)
-  const [place, setPlace] = useState<'today' | 'portfolio'>('today')
+  const [place, setPlace] = useState<PlaceId>('today')
 
   const nav: MobileNav = useMemo(
     () => ({
       places: PLACES,
       onNavigate: (href) => {
-        if (href === '#today' || href === '#portfolio') {
+        const id = href.slice(1) as PlaceId
+        if (['today', 'portfolio', 'signals', 'plan'].includes(id)) {
           setNote(null)
-          setPlace(href === '#today' ? 'today' : 'portfolio')
+          setPlace(id)
           window.scrollTo(0, 0)
         } else setNote(NOT_YET)
       },
@@ -52,6 +55,14 @@ export function App() {
     }),
     []
   )
+
+  const pages: Record<PlaceId, ReactNode> = {
+    today: <Today data={data} nav={nav} />,
+    portfolio: <Portfolio data={data} nav={nav} />,
+    signals: <Signals data={data} nav={nav} />,
+    plan: <Plan data={data} nav={nav} />,
+  }
+  const page = pages[place]
 
   const banner = (
     <div className="v-demostrip">
@@ -79,7 +90,7 @@ export function App() {
         onNavigate={nav.onNavigate}
       >
         {banner}
-        {place === 'today' ? <Today data={data} nav={nav} /> : <Portfolio data={data} nav={nav} />}
+        {page}
       </MobileShell>
     )
   }
@@ -111,7 +122,7 @@ export function App() {
       </nav>
       <main className="v-main">
         {banner}
-        {place === 'today' ? <Today data={data} nav={nav} /> : <Portfolio data={data} nav={nav} />}
+        {page}
       </main>
     </div>
   )
