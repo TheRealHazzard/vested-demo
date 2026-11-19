@@ -179,6 +179,9 @@ function series(): Snapshot[] {
   for (let i = 400; i >= 0; i--) {
     const d = new Date(Date.now() - i * 86_400_000)
     v *= 1 + (rand() - 0.46) * 0.004 + 0.0008
+    // Two real-looking days: a sharp fall and a sharp jump, so the chart has something to mark.
+    if (i === 300) v *= 0.972
+    if (i === 150) v *= 1.026
     out.push({
       date: d.toISOString().slice(0, 10),
       total_value: Math.round(v),
@@ -242,7 +245,7 @@ const SAMPLE: VestedData = {
   },
   healthProblems: [],
   regime: { pct_above_sma: 5.8, uptrend: true },
-  concentration: { holdings: [{ symbol: 'Reliance', weight_pct: 14 }, { symbol: 'HDFC Bank', weight_pct: 18 }], top2_pct: 32 },
+  concentration: { holdings: [{ symbol: 'Reliance', weight_pct: 14 }, { symbol: 'HDFCBANK', weight_pct: 18 }], top2_pct: 32 },
   usHoldings: [
     { ticker: 'NVDA', value_inr: 900_000, day_change_pct: 2.4, verdict: 'HOLD', reasons: ['Up a lot this year. Nothing to do.'] },
     { ticker: 'MSFT', value_inr: 700_000, day_change_pct: -1.1, verdict: 'HOLD' },
@@ -250,9 +253,9 @@ const SAMPLE: VestedData = {
     { ticker: 'TSLA', value_inr: 300_000, day_change_pct: -2.9, verdict: 'REVIEW' },
   ],
   indiaHoldings: [
-    { symbol: 'Reliance Industries', value: 1_720_000, weight_pct: 14, verdict: 'TRIM', reasons: ['It is 14% of your liquid money and your limit is 10%.', 'Momentum is positive, so this is about size, not about the company.'], momentum_6mo: 0.061 },
-    { symbol: 'HDFC Bank', value: 1_180_000, weight_pct: 10, verdict: 'HOLD', reasons: [], momentum_6mo: 0.097 },
-    { symbol: 'Infosys', value: 890_000, weight_pct: 7, verdict: 'HOLD', reasons: [], momentum_6mo: 0.032 },
+    { symbol: 'RELIANCE', value: 1_720_000, weight_pct: 14, verdict: 'TRIM', reasons: ['It is 14% of your liquid money and your limit is 10%.', 'Momentum is positive, so this is about size, not about the company.'], momentum_6mo: 0.061 },
+    { symbol: 'HDFCBANK', value: 1_180_000, weight_pct: 10, verdict: 'HOLD', reasons: [], momentum_6mo: 0.097 },
+    { symbol: 'INFY', value: 890_000, weight_pct: 7, verdict: 'HOLD', reasons: [], momentum_6mo: 0.032 },
     { symbol: 'IRCTC', value: 340_000, weight_pct: 3, verdict: 'WATCH', reasons: ['Three negative headlines since Monday, including an index removal.', 'It is a small position, so there is no urgency.'], momentum_6mo: -0.04 },
   ],
   funds: [
