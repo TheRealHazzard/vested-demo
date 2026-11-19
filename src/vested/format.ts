@@ -19,6 +19,14 @@ export function shortDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }
 
+export function shortDateYear(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
 export function longDate(d: Date): { weekday: string; day: string } {
   return {
     weekday: d.toLocaleDateString('en-IN', { weekday: 'long' }),

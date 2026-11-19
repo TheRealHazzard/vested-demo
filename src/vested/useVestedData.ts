@@ -84,7 +84,7 @@ function series(): Snapshot[] {
   }
   for (let i = 400; i >= 0; i--) {
     const d = new Date(Date.now() - i * 86_400_000)
-    v *= 1 + (rand() - 0.46) * 0.006 + 0.0008
+    v *= 1 + (rand() - 0.46) * 0.004 + 0.0008
     out.push({
       date: d.toISOString().slice(0, 10),
       total_value: Math.round(v),

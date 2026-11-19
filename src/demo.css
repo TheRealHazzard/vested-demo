@@ -1,0 +1,83 @@
+/* Only what the demo shell needs; the app itself lives in vested/ and is synced from OpenAlgo. */
+.v-navbtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--v-mute);
+  background: transparent;
+  border: 0;
+  position: relative;
+  padding: 10px 0;
+  width: 64px;
+}
+.v-navbtn[aria-current='page'] {
+  color: var(--v-ink);
+}
+.v-navbtn[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  background: var(--v-ember);
+  border-radius: 2px;
+}
+.v-logo {
+  display: grid;
+  place-items: center;
+}
+.v-demostrip {
+  max-width: 640px;
+  margin: 0 auto;
+}
+.vm .v-demostrip {
+  padding: calc(10px + env(safe-area-inset-top)) 16px 0;
+}
+@media (min-width: 900px) {
+  .v-demostrip {
+    max-width: none;
+    margin: 0;
+  }
+}
+.v-demo {
+  font-size: 13px;
+  color: #b0a797;
+  margin: 0 0 8px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.v-demo .v-mono {
+  color: #ff9a4a;
+  border: 1px solid #4a2a10;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+}
+.v-note {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #363636;
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #b0a797;
+  margin-bottom: 14px;
+}
+.v-note button {
+  flex: none;
+  background: transparent;
+  border: 0;
+  color: #ff9a4a;
+  font-weight: 600;
+  min-height: 44px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}

@@ -3,7 +3,7 @@
  * the ranked "needs you" list, the net-worth series for each range, and the
  * projected path to the goal. No React in here, so it can be tested alone.
  */
-import { inr, shortDate } from './format'
+import { inr, shortDate, shortDateYear } from './format'
 import type { VestedData } from './useVestedData'
 
 // ---------- needs you ----------
@@ -156,7 +156,16 @@ export type RangeKey = '1M' | '6M' | '1Y' | 'All' | 'Path'
 /** The chart is drawn in a fixed box and scaled by CSS, so every range shares one coordinate space. */
 export const BOX = { w: 760, h: 290, top: 24, bottom: 262 }
 
+/** One point a finger can land on: where it is drawn, what it is worth, and when. */
+export interface ScrubPoint {
+  x: number
+  y: number
+  value: number
+  label: string
+}
+
 export interface Plot {
+  scrub: ScrubPoint[]
   line: string
   area: string
   end: { x: number; y: number } | null
@@ -164,6 +173,17 @@ export interface Plot {
   to: string
   gain: number | null
   enough: boolean
+}
+
+const EMPTY_PLOT: Plot = {
+  scrub: [],
+  line: '',
+  area: '',
+  end: null,
+  from: '',
+  to: '',
+  gain: null,
+  enough: false,
 }
 
 const RANGE_DAYS: Record<Exclude<RangeKey, 'Path'>, number> = {
@@ -183,12 +203,12 @@ export function plotRange(
   key: Exclude<RangeKey, 'Path'>
 ): Plot {
   const latest = snapshots.at(-1)
-  if (!latest) return { line: '', area: '', end: null, from: '', to: '', gain: null, enough: false }
+  if (!latest) return EMPTY_PLOT
   const cutoff = new Date(latest.date).getTime() - RANGE_DAYS[key] * DAY
   const pts = snapshots.filter((s) => new Date(s.date).getTime() >= cutoff)
-  if (pts.length < 2) {
-    return { line: '', area: '', end: null, from: '', to: '', gain: null, enough: false }
-  }
+  if (pts.length < 2) return EMPTY_PLOT
+  // A year or more back needs the year to be unambiguous.
+  const fmt = key === '1Y' || key === 'All' ? shortDateYear : shortDate
   const t0 = new Date(pts[0].date).getTime()
   const t1 = new Date(pts[pts.length - 1].date).getTime()
   const vals = pts.map((p) => p.total_value)
@@ -202,10 +222,16 @@ export function plotRange(
   const line = toPath(xy)
   const end = xy[xy.length - 1]
   return {
+    scrub: pts.map((p, i) => ({
+      x: xy[i].x,
+      y: xy[i].y,
+      value: p.total_value,
+      label: fmt(p.date),
+    })),
     line,
     area: `${line} L${end.x.toFixed(1)} ${BOX.bottom} L0 ${BOX.bottom} Z`,
     end,
-    from: shortDate(pts[0].date),
+    from: fmt(pts[0].date),
     to: 'Today',
     gain: vals[vals.length - 1] - vals[0],
     enough: true,
@@ -238,7 +264,15 @@ export function yearOf(monthsFromNow: number, now = new Date()): number {
   return new Date(now.getFullYear(), now.getMonth() + monthsFromNow, 1).getFullYear()
 }
 
+function monthLabel(monthsFromNow: number, now = new Date()): string {
+  return new Date(now.getFullYear(), now.getMonth() + monthsFromNow, 1).toLocaleDateString(
+    'en-IN',
+    { month: 'short', year: 'numeric' }
+  )
+}
+
 export interface PathPlot {
+  scrub: ScrubPoint[]
   history: string
   historyArea: string
   today: { x: number; y: number }
@@ -294,12 +328,28 @@ export function plotPath(
   const today = { x: TODAY_X, y: yOf(start) }
   const history = toPath(histPts.length ? [...histPts.slice(0, -1), today] : [today])
   const hitMonth = monthsToGoal(base, goal)
+  const lastMonth = hitMonth ?? HORIZON_MONTHS
+  const scrub: ScrubPoint[] = [
+    ...snapshots.map((snap, i) => ({
+      x: histPts[i]?.x ?? 0,
+      y: histPts[i]?.y ?? today.y,
+      value: snap.total_value,
+      label: shortDate(snap.date),
+    })),
+    ...base.slice(1, lastMonth + 1).map((v, i) => ({
+      x: xOf(i + 1),
+      y: yOf(Math.min(v, goal)),
+      value: v,
+      label: monthLabel(i + 1),
+    })),
+  ]
   const upper = step(upTo(hi))
   const lower = step(upTo(lo)).reverse()
   const cone = `${toPath(upper)} ${lower.map((p) => `L${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')} Z`
   const earliest = monthsToGoal(hi, goal)
   const latest = monthsToGoal(lo, goal)
   return {
+    scrub,
     history,
     historyArea: `${history} L${TODAY_X} ${BOX.bottom} L0 ${BOX.bottom} Z`,
     today,

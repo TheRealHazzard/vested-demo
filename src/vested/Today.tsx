@@ -1,8 +1,10 @@
 import { Search } from 'lucide-react'
 import { buildNeeds, type Need } from './derive'
 import { countWord, inr, inrParts, longDate, shortDate, signedPct } from './format'
+import { type MobileNav, MobileToday } from './mobile/MobileToday'
 import { NetWorthChart } from './NetWorthChart'
-import { type AllocationRow, useVestedData } from './useVestedData'
+import { useIsMobile } from './useIsMobile'
+import type { AllocationRow, VestedData } from './useVestedData'
 
 function bucketColour(name: string): string {
   if (/gold/i.test(name)) return 'var(--v-gold)'
@@ -99,8 +101,7 @@ function AllocationRows({ rows }: { rows: AllocationRow[] }) {
   )
 }
 
-export default function Today() {
-  const data = useVestedData()
+function DesktopToday({ data }: { data: VestedData }) {
   const { weekday, day } = longDate(new Date())
 
   const latest = data.snapshots.at(-1)
@@ -385,4 +386,10 @@ export default function Today() {
       </div>
     </div>
   )
+}
+
+/** One page, two layouts: the phone gets its own design, not the desktop one squeezed. */
+export default function Today({ data, nav }: { data: VestedData; nav: MobileNav }) {
+  const isMobile = useIsMobile()
+  return isMobile ? <MobileToday data={data} nav={nav} /> : <DesktopToday data={data} />
 }
